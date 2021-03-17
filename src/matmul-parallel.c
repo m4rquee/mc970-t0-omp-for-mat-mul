@@ -25,7 +25,7 @@ void initialize_matrices(float *a, float *b, float *c, float *r1, float *r2,
 void multiply(float *a, float *b, float *r, unsigned size) {
   float sum = 0.0;
 
-#pragma omp for collapse(2) schedule(static) nowait
+#pragma omp parallel for collapse(2) // schedule(static) nowait
   for (int i = 0; i < size; ++i) {
     for (int j = 0; j < size; ++j) {
       sum = 0.0;
@@ -38,7 +38,7 @@ void multiply(float *a, float *b, float *r, unsigned size) {
 }
 
 void sum(float *a, float *b, float *r, unsigned size) {
-#pragma omp for collapse(2) schedule(static) nowait
+#pragma omp parallel for collapse(2) // schedule(static) nowait
   for (int i = 0; i < size; ++i) {
     for (int j = 0; j < size; ++j) {
       r[i * size + j] = a[i * size + j] + b[i * size + j];
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
   // Compute R = (A * B) + C
   t = omp_get_wtime();
 
-#pragma omp parallel
+// #pragma omp parallel
   {
     // Check for parallelization on this block
 
