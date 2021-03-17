@@ -23,7 +23,7 @@ void initialize_matrices(float *a, float *b, float *c, float *r1, float *r2,
 }
 
 void multiply(float *a, float *b, float *r, unsigned size) {
-#pragma omp parallel for collapse(3)
+#pragma omp parallel for collapse(2)
   for (int i = 0; i < size; ++i) {
     for (int j = 0; j < size; ++j) {
       for (int k = 0; k < size; ++k) {
