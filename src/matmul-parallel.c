@@ -8,7 +8,7 @@
 #include <omp.h>
 
 // Initialize matrices
-void initialize_matrices(float *a, float *b, float *c, float *r1, float *r2,
+void initialize_matrices(float *a, float *b, float *c, float *r,
                          unsigned size, unsigned seed) {
   srand(seed);
   for (int i = 0; i < size; ++i) {
@@ -16,8 +16,7 @@ void initialize_matrices(float *a, float *b, float *c, float *r1, float *r2,
       a[i * size + j] = rand() % 10;
       b[i * size + j] = rand() % 10;
       c[i * size + j] = rand() % 10;
-      r1[i * size + j] = 0.0f;
-      r2[i * size + j] = 0.0f;
+      r[i * size + j] = 0.0f;
     }
   }
 }
@@ -25,7 +24,7 @@ void initialize_matrices(float *a, float *b, float *c, float *r1, float *r2,
 void multiply(float *a, float *b, float *r, unsigned size) {
   float sum;
 
-#pragma omp for collapse(2) schedule(static) private(sum) nowait
+#pragma omp for simd collapse(2) schedule(static) private(sum) nowait
   for (int i = 0; i < size; ++i) {
     for (int j = 0; j < size; ++j) {
       sum = 0.0;
@@ -37,11 +36,11 @@ void multiply(float *a, float *b, float *r, unsigned size) {
   }
 }
 
-void sum(float *a, float *b, float *r, unsigned size) {
-#pragma omp for collapse(2) schedule(static) nowait
+void sum(float *a, float *b, unsigned size) {
+#pragma omp for simd collapse(2) schedule(static) nowait
   for (int i = 0; i < size; ++i) {
     for (int j = 0; j < size; ++j) {
-      r[i * size + j] = a[i * size + j] + b[i * size + j];
+      a[i * size + j] += b[i * size + j];
     }
   }
 }
@@ -57,7 +56,7 @@ void print_matrix(float *r, unsigned size) {
 }
 
 int main(int argc, char *argv[]) {
-  float *a, *b, *c, *r1, *r2;
+  float *a, *b, *c, *r;
   unsigned seed, size;
   double t;
   FILE *input;
@@ -83,11 +82,10 @@ int main(int argc, char *argv[]) {
   a = (float *)malloc(sizeof(float) * size * size);
   b = (float *)malloc(sizeof(float) * size * size);
   c = (float *)malloc(sizeof(float) * size * size);
-  r1 = (float *)malloc(sizeof(float) * size * size);
-  r2 = (float *)malloc(sizeof(float) * size * size);
+  r = (float *)malloc(sizeof(float) * size * size);
 
   // initialize_matrices with random data
-  initialize_matrices(a, b, c, r1, r2, size, seed);
+  initialize_matrices(a, b, c, r, size, seed);
 
   // Compute R = (A * B) + C
   t = omp_get_wtime();
@@ -96,17 +94,17 @@ int main(int argc, char *argv[]) {
   {
     // Check for parallelization on this block
 
-    // r1 = a * b
-    multiply(a, b, r1, size);
+    // r = a * b
+    multiply(a, b, r, size);
 
-    // r2 = r1 + c
-    sum(r1, c, r2, size);
+    // r += c
+    sum(r, c, size);
   }
 
   t = omp_get_wtime() - t;
 
   // Show result
-  print_matrix(r2, size);
+  print_matrix(r, size);
 
   // Output elapsed time
   fprintf(stderr, "%lf\n", t);
@@ -115,8 +113,7 @@ int main(int argc, char *argv[]) {
   free(a);
   free(b);
   free(c);
-  free(r1);
-  free(r2);
+  free(r);
 
   return EXIT_SUCCESS;
 }
