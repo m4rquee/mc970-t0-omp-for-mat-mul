@@ -21,13 +21,14 @@ void initialize_matrices(float *a, float *b, float *c, float *r,
   }
 }
 
-void multiply(float *a, float *b, float *r, unsigned size) {
+void multiply(const float * __restrict__ a, const float * __restrict__ b, float * __restrict__ r, unsigned size) {
   float sum;
 
-#pragma omp for simd collapse(2) schedule(static) private(sum) nowait
+#pragma omp for collapse(2) schedule(static, 64) private(sum) nowait
   for (int i = 0; i < size; ++i) {
     for (int j = 0; j < size; ++j) {
       sum = 0.0;
+      #pragma omp simd
       for (int k = 0; k < size; ++k) {
         sum = sum + a[i * size + k] * b[k * size + j];
       }
@@ -36,8 +37,8 @@ void multiply(float *a, float *b, float *r, unsigned size) {
   }
 }
 
-void sum(float *a, float *b, unsigned size) {
-#pragma omp for simd collapse(2) schedule(static) nowait
+void sum(float * __restrict__ a, const float * __restrict__ b, unsigned size) {
+#pragma omp for simd collapse(2) schedule(static, 64) nowait
   for (int i = 0; i < size; ++i) {
     for (int j = 0; j < size; ++j) {
       a[i * size + j] += b[i * size + j];
