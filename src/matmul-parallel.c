@@ -26,7 +26,7 @@ void multiply(const float * __restrict__ a, const float * __restrict__ bT, float
   float sum;
   int ioff, joff;
 
-#pragma omp for collapse(2) schedule(static) private(sum, ioff, joff) nowait
+#pragma omp for collapse(2) schedule(static) private(sum, ioff, joff)
   for (int i = 0; i < size; i++) {
     for (int j = 0; j < size; j++) {
       sum = 0.0;
@@ -41,7 +41,7 @@ void multiply(const float * __restrict__ a, const float * __restrict__ bT, float
 }
 
 void sum(float * __restrict__ a, const float * __restrict__ b, unsigned size) {
-#pragma omp for simd collapse(2) schedule(static) nowait
+#pragma omp for simd collapse(2) schedule(static)
   for (int i = 0; i < size; i++) {
     for (int j = 0; j < size; j++) {
       a[i * size + j] += b[i * size + j];
@@ -50,7 +50,7 @@ void sum(float * __restrict__ a, const float * __restrict__ b, unsigned size) {
 }
 
 void transpose(float * __restrict__ mT, const float * __restrict__ m, unsigned size) {
-#pragma omp for simd collapse(2) schedule(static) nowait
+#pragma omp for simd collapse(2) schedule(static)
   for (int i = 0; i < size; i++) {
     for (int j = 0; j < size; j++) {
       mT[i * size + j] = m[j * size + i];
