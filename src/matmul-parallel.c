@@ -21,27 +21,38 @@ void initialize_matrices(float *a, float *b, float *c, float *r,
   }
 }
 
-void multiply(const float * __restrict__ a, const float * __restrict__ b, float * __restrict__ r, unsigned size) {
+void multiply(const float * __restrict__ a, const float * __restrict__ bT, float * __restrict__ r, unsigned size) {
   float sum;
+  int ioff, joff;
 
-#pragma omp for collapse(2) schedule(static, 64) private(sum) nowait
-  for (int i = 0; i < size; ++i) {
-    for (int j = 0; j < size; ++j) {
+#pragma omp for collapse(2) schedule(static) private(sum, ioff, joff) nowait
+  for (int i = 0; i < size; i++) {
+    for (int j = 0; j < size; j++) {
       sum = 0.0;
+      ioff = i * size, joff = j * size;
       #pragma omp simd
-      for (int k = 0; k < size; ++k) {
-        sum = sum + a[i * size + k] * b[k * size + j];
+      for (int k = 0; k < size; k++) {
+        sum += a[ioff + k] * bT[joff + k];
       }
-      r[i * size + j] = sum;
+      r[ioff + j] = sum;
     }
   }
 }
 
 void sum(float * __restrict__ a, const float * __restrict__ b, unsigned size) {
-#pragma omp for simd collapse(2) schedule(static, 64) nowait
-  for (int i = 0; i < size; ++i) {
-    for (int j = 0; j < size; ++j) {
+#pragma omp for simd collapse(2) schedule(static) nowait
+  for (int i = 0; i < size; i++) {
+    for (int j = 0; j < size; j++) {
       a[i * size + j] += b[i * size + j];
+    }
+  }
+}
+
+void transpose(float * __restrict__ mT, const float * __restrict__ m, unsigned size) {
+#pragma omp for simd collapse(2) schedule(static) nowait
+  for (int i = 0; i < size; i++) {
+    for (int j = 0; j < size; j++) {
+      mT[i * size + j] = m[j * size + i];
     }
   }
 }
@@ -57,7 +68,7 @@ void print_matrix(float *r, unsigned size) {
 }
 
 int main(int argc, char *argv[]) {
-  float *a, *b, *c, *r;
+  float *a, *b, *bT, *c, *r;
   unsigned seed, size;
   double t;
   FILE *input;
@@ -82,6 +93,7 @@ int main(int argc, char *argv[]) {
   // Allocate matrices
   a = (float *)malloc(sizeof(float) * size * size);
   b = (float *)malloc(sizeof(float) * size * size);
+  bT = (float *)malloc(sizeof(float) * size * size);
   c = (float *)malloc(sizeof(float) * size * size);
   r = (float *)malloc(sizeof(float) * size * size);
 
@@ -91,12 +103,15 @@ int main(int argc, char *argv[]) {
   // Compute R = (A * B) + C
   t = omp_get_wtime();
 
-#pragma omp parallel
+#pragma omp parallel if(size >= 100) // if data is large enough
   {
     // Check for parallelization on this block
 
-    // r = a * b
-    multiply(a, b, r, size);
+    // bT = b^T
+    transpose(bT, b, size); // to increase data locality
+
+    // r = a * b (b is expected to be transposed)
+    multiply(a, bT, r, size);
 
     // r += c
     sum(r, c, size);
@@ -113,6 +128,7 @@ int main(int argc, char *argv[]) {
   // Release memory
   free(a);
   free(b);
+  free(bT);
   free(c);
   free(r);
 
