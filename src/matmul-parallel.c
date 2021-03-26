@@ -8,7 +8,7 @@
 #include <omp.h>
 
 // Initialize matrices
-void initialize_matrices(float *a, float *b, float *c, float *r,
+void initialize_matrices(float *a, float *b, float *bT, float *c, float *r,
                          unsigned size, unsigned seed) {
   srand(seed);
   for (int i = 0; i < size; ++i) {
@@ -16,6 +16,7 @@ void initialize_matrices(float *a, float *b, float *c, float *r,
       a[i * size + j] = rand() % 10;
       b[i * size + j] = rand() % 10;
       c[i * size + j] = rand() % 10;
+      bT[i * size + j] = 0.0f;
       r[i * size + j] = 0.0f;
     }
   }
@@ -98,7 +99,7 @@ int main(int argc, char *argv[]) {
   r = (float *)malloc(sizeof(float) * size * size);
 
   // initialize_matrices with random data
-  initialize_matrices(a, b, c, r, size, seed);
+  initialize_matrices(a, b, bT, c, r, size, seed);
 
   // Compute R = (A * B) + C
   t = omp_get_wtime();
