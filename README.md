@@ -22,9 +22,9 @@ Tasks & Rules
 
 You should do the following tasks:
 
-- [ ] Understand the serial code in `src/matmul-serial.c`
-- [ ] Parallelize the code using OpenMP in the file `src/matmul-parallel.c`
-- [ ] Run both versions and compare them. Did you get any speedup?
+- [X] Understand the serial code in `src/matmul-serial.c`
+- [X] Parallelize the code using OpenMP in the file `src/matmul-parallel.c`
+- [X] Run both versions and compare them. Did you get any speedup?
 
 You must **not** change the serial implementation, only the parallel one.
 
